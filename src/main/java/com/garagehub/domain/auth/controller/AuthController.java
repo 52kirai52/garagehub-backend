@@ -1,6 +1,7 @@
 package com.garagehub.domain.auth.controller;
 
 import com.garagehub.domain.auth.dto.SendCodeRequest;
+import com.garagehub.domain.auth.dto.VerifyCodeRequest;
 import com.garagehub.domain.auth.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -20,5 +21,14 @@ public class AuthController {
     public ResponseEntity<String> sendCode(@RequestBody @Valid SendCodeRequest request) {
         authService.sendVerificationCode(request.getPhone());
         return ResponseEntity.ok("인증번호가 발송되었습니다.");
+    }
+
+    @PostMapping("/verify-code")
+    public ResponseEntity<String> verifyCode(@RequestBody @Valid VerifyCodeRequest request) {
+        boolean result = authService.verifyCode(request.getPhone(), request.getCode());
+        if (result) {
+            return ResponseEntity.ok("인증이 완료되었습니다.");
+        }
+        return ResponseEntity.badRequest().body("인증번호가 올바르지 않습니다.");
     }
 }
