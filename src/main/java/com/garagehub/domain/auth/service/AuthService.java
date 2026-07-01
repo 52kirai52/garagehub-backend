@@ -4,9 +4,12 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import com.garagehub.domain.user.repository.UserRepository;
+import com.garagehub.global.exception.CustomException;
+import com.garagehub.global.exception.ErrorCode;
 
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.util.Map;
 
 @Service
 public class AuthService {
@@ -29,20 +32,20 @@ public class AuthService {
 
     public void sendVerificationCode(String phone) {
         if (userRepository.existsByPhone(phone)) {
-            throw new RuntimeException("이미 가입된 전화번호입니다.");
+            throw new CustomException(ErrorCode.DUPLICATE_PHONE);
         }
 
         String lockKey = "sms:lock:" + phone;
         Boolean locked = redisTemplate.opsForValue().setIfAbsent(lockKey, "1", LOCK_TTL);
         if (!Boolean.TRUE.equals(locked)) {
-            throw new RuntimeException("요청을 처리 중입니다. 잠시 후 다시 시도해주세요.");
+            throw new CustomException(ErrorCode.SMS_LOCK);
         }
 
         try {
             String cooldownKey = "sms:cooldown:" + phone;
             if (Boolean.TRUE.equals(redisTemplate.hasKey(cooldownKey))) {
                 Long ttl = redisTemplate.getExpire(cooldownKey);
-                throw new RuntimeException(ttl + "초 후에 다시 시도해주세요.");
+                throw new CustomException(ErrorCode.SMS_COOLDOWN, Map.of("remainingSeconds", ttl));
             }
 
             String codeKey = "sms:code:" + phone;
@@ -54,12 +57,11 @@ public class AuthService {
             redisTemplate.opsForValue().set(codeKey, code, CODE_TTL);
             redisTemplate.opsForValue().set(cooldownKey, "1", COOLDOWN);
 
-        } catch (RuntimeException e) {
+        } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException("인증번호 발송에 실패했습니다.");
+            throw new CustomException(ErrorCode.SMS_SEND_FAILED);
         } finally {
-            // 락은 무조건 해제
             redisTemplate.delete(lockKey);
         }
     }
