@@ -18,6 +18,10 @@ public record ApiResponse<T>(
     public static ApiResponse<?> fail(List<FieldError> errors) {
         return new ApiResponse<>(false, null, errors);
     }
+    
+    public static <T> ApiResponse<T> fail(T data, List<FieldError> errors) {
+        return new ApiResponse<>(false, data, errors);
+    }
 
     public record FieldError(
         String field,
