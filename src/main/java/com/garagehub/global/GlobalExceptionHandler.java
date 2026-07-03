@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -45,6 +45,26 @@ public class GlobalExceptionHandler {
         log.error("예상 못한 예외 발생", e);
 
         ErrorCode errorCode = ErrorCode.UNEXPECTED_ERROR;
+        List<ApiResponse.FieldError> errors = List.of(
+            new ApiResponse.FieldError(
+                errorCode.getField(),
+                errorCode.getCode(),
+                errorCode.getMessage()
+            )
+        );
+        return ResponseEntity
+            .status(errorCode.getStatus())
+            .body(ApiResponse.fail(errors));
+    }
+
+    // 정체를 아는 예상 못한 예외
+    
+    // Redis(Memurai) 연결 실패
+    @ExceptionHandler(RedisConnectionFailureException.class)
+    public ResponseEntity<ApiResponse<?>> handleRedisConnection(RedisConnectionFailureException e) {
+        log.error("Redis 연결 실패", e);
+
+        ErrorCode errorCode = ErrorCode.REDIS_CONNECTION_FAILED;
         List<ApiResponse.FieldError> errors = List.of(
             new ApiResponse.FieldError(
                 errorCode.getField(),
