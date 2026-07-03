@@ -2,6 +2,9 @@ package com.garagehub.global;
 
 import com.garagehub.global.common.ApiResponse;
 import com.garagehub.global.exception.CustomException;
+import com.garagehub.global.exception.ErrorCode;
+
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
@@ -11,6 +14,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     // 예상한 예외
@@ -38,11 +42,18 @@ public class GlobalExceptionHandler {
     // 예상 못한 예외
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<?>> handleException(Exception e) {
+        log.error("예상 못한 예외 발생", e);
+
+        ErrorCode errorCode = ErrorCode.UNEXPECTED_ERROR;
         List<ApiResponse.FieldError> errors = List.of(
-            new ApiResponse.FieldError("server", "S000", "서버 에러가 발생했습니다.")
+            new ApiResponse.FieldError(
+                errorCode.getField(),
+                errorCode.getCode(),
+                errorCode.getMessage()
+            )
         );
         return ResponseEntity
-            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .status(errorCode.getStatus())
             .body(ApiResponse.fail(errors));
     }
 }

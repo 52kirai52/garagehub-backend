@@ -9,8 +9,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum ErrorCode {
 
-    TEST(HttpStatus.BAD_REQUEST, "phone", "X000", "테스트 에러입니다."),
-
     // 중복
     DUPLICATE_PHONE(HttpStatus.BAD_REQUEST, "D001", "phone", "이미 가입된 전화번호입니다."),
 
@@ -19,8 +17,14 @@ public enum ErrorCode {
     SMS_COOLDOWN(HttpStatus.BAD_REQUEST, "A002", "phone", "잠시 후 다시 시도해주세요."),
 
     // SMS
-    SMS_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "S001", "phone", "인증번호 발송에 실패했습니다.");
+    SMS_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "S001", "phone", "인증번호 발송에 실패했습니다."),
 
+    // 인프라 (Redis 등)
+    REDIS_CONNECTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "R001", "server", "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요."),
+    
+    // 예상치 못한 예외
+    UNEXPECTED_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "S000", "server", "서버 에러가 발생했습니다.");
+    
     private final HttpStatus status;
     private final String field;
     private final String code;
