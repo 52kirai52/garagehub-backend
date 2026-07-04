@@ -9,7 +9,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.List;
 
 import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.support.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -75,5 +77,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity
             .status(errorCode.getStatus())
             .body(ApiResponse.fail(errors));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+        public ResponseEntity<ApiResponse<?>> handleValidation(MethodArgumentNotValidException e) {
+            ErrorCode errorCode = ErrorCode.INVALID_INPUT;
+
+            List<ApiResponse.FieldError> errors = e.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(fieldError -> new ApiResponse.FieldError(
+                    fieldError.getField(),
+                    errorCode.getCode(),
+                    fieldError.getDefaultMessage()
+                ))
+                .toList();
+
+            return ResponseEntity
+                .status(errorCode.getStatus())
+                .body(ApiResponse.fail(errors));
     }
 }

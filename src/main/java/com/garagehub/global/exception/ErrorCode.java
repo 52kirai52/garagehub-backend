@@ -23,8 +23,11 @@ public enum ErrorCode {
     REDIS_CONNECTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "R001", "server", "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요."),
     
     // 예상치 못한 예외
-    UNEXPECTED_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "S000", "server", "서버 에러가 발생했습니다.");
+    UNEXPECTED_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "S000", "server", "서버 에러가 발생했습니다."),
     
+    // 검증
+    INVALID_INPUT(HttpStatus.BAD_REQUEST, "V001", "input", "올바른 전화번호 형식이 아닙니다.");
+
     private final HttpStatus status;
     private final String field;
     private final String code;
