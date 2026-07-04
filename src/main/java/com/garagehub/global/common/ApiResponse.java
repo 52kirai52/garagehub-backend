@@ -1,31 +1,32 @@
 package com.garagehub.global.common;
-
 import java.util.List;
-
+import lombok.Builder;
+@Builder
 public record ApiResponse<T>(
     boolean success,
+    String message,
     T data,
     List<FieldError> errors
 ) {
-    public static <T> ApiResponse<T> ok(T data) {
-        return new ApiResponse<>(true, data, List.of());
+        public ApiResponse {
+        if (errors == null) {
+            errors = List.of();
+        }
     }
 
-    public static <T> ApiResponse<T> ok() {
-        return new ApiResponse<>(true, null, List.of());
-    }
-
-    public static ApiResponse<?> fail(List<FieldError> errors) {
-        return new ApiResponse<>(false, null, errors);
-    }
-    
-    public static <T> ApiResponse<T> fail(T data, List<FieldError> errors) {
-        return new ApiResponse<>(false, data, errors);
+    public static class ApiResponseBuilder<T> {
+        public ApiResponse<T> ok() {
+            this.success = true;
+            return this.build();
+        }
+        public ApiResponse<T> fail() {
+            this.success = false;
+            return this.build();
+        }
     }
 
     public record FieldError(
         String field,
-        String code,
-        String message
+        String code
     ) {}
 }
