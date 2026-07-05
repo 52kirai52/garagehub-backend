@@ -27,10 +27,6 @@ public class CustomException extends RuntimeException {
         return errorCode.getCode();
     }
 
-    public String getField() {
-        return errorCode.getField();
-    }
-
     @Override
     public String getMessage() {
         return errorCode.getMessage();
