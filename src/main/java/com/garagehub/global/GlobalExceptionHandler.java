@@ -3,15 +3,15 @@ package com.garagehub.global;
 import com.garagehub.global.common.ApiResponse;
 import com.garagehub.global.exception.CustomException;
 import com.garagehub.global.exception.ErrorCode;
+import com.garagehub.global.exception.ErrorDetail;
 
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
 import org.springframework.data.redis.RedisConnectionFailureException;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.handler.annotation.support.MethodArgumentNotValidException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -19,82 +19,76 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 public class GlobalExceptionHandler {
 
-    // 예상한 예외
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ApiResponse<?>> handleCustomException(CustomException e) {
-        List<ApiResponse.FieldError> errors = List.of(
-            new ApiResponse.FieldError(
-                e.getField(),
-                e.getCode(),
-                e.getMessage()
-            )
-        );
+        ErrorCode errorCode = e.getErrorCode();
 
-        if (e.getData() != null) {
-            return ResponseEntity
-                .status(e.getStatus())
-                .body(ApiResponse.fail(e.getData(), errors));
-        }
+        log.warn("비즈니스 예외: {}", errorCode.getCode());
 
-        return ResponseEntity
-            .status(e.getStatus())
-            .body(ApiResponse.fail(errors));
+        ErrorDetail detail = ErrorDetail.builder()
+            .errorCode(errorCode)
+            .data(e.getData())
+            .build();
+
+        return toResponse(detail);
     }
 
-    // 예상 못한 예외
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<?>> handleException(Exception e) {
-        log.error("예상 못한 예외 발생", e);
-
-        ErrorCode errorCode = ErrorCode.UNEXPECTED_ERROR;
-        List<ApiResponse.FieldError> errors = List.of(
-            new ApiResponse.FieldError(
-                errorCode.getField(),
-                errorCode.getCode(),
-                errorCode.getMessage()
-            )
-        );
-        return ResponseEntity
-            .status(errorCode.getStatus())
-            .body(ApiResponse.fail(errors));
-    }
-
-    // 정체를 아는 예상 못한 예외
-    
-    // Redis(Memurai) 연결 실패
     @ExceptionHandler(RedisConnectionFailureException.class)
     public ResponseEntity<ApiResponse<?>> handleRedisConnection(RedisConnectionFailureException e) {
         log.error("Redis 연결 실패", e);
 
-        ErrorCode errorCode = ErrorCode.REDIS_CONNECTION_FAILED;
-        List<ApiResponse.FieldError> errors = List.of(
-            new ApiResponse.FieldError(
-                errorCode.getField(),
-                errorCode.getCode(),
-                errorCode.getMessage()
-            )
-        );
-        return ResponseEntity
-            .status(errorCode.getStatus())
-            .body(ApiResponse.fail(errors));
+        ErrorDetail detail = ErrorDetail.builder()
+            .errorCode(ErrorCode.REDIS_CONNECTION_FAILED)
+            .build();
+
+        return toResponse(detail);
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-        public ResponseEntity<ApiResponse<?>> handleValidation(MethodArgumentNotValidException e) {
-            ErrorCode errorCode = ErrorCode.INVALID_INPUT;
+@ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<?>> handleValidation(MethodArgumentNotValidException e) {
+        ErrorCode errorCode = ErrorCode.INVALID_INPUT;
 
-            List<ApiResponse.FieldError> errors = e.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(fieldError -> new ApiResponse.FieldError(
-                    fieldError.getField(),
-                    errorCode.getCode(),
-                    fieldError.getDefaultMessage()
-                ))
-                .toList();
+        log.warn("검증 예외: {}", errorCode.getCode());
 
-            return ResponseEntity
-                .status(errorCode.getStatus())
-                .body(ApiResponse.fail(errors));
+        List<ApiResponse.FieldError> errors = e.getBindingResult()
+            .getFieldErrors()
+            .stream()
+            .map(fieldError -> new ApiResponse.FieldError(
+                fieldError.getField(),
+                errorCode.getCode(),
+                fieldError.getDefaultMessage()
+            ))
+            .toList();
+
+        ErrorDetail detail = ErrorDetail.builder()
+            .errorCode(errorCode)
+            .errors(errors)
+            .build();
+
+        return toResponse(detail);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<?>> handleException(Exception e) {
+        log.error("예상 못한 예외 발생", e);
+
+        ErrorDetail detail = ErrorDetail.builder()
+            .errorCode(ErrorCode.UNEXPECTED_ERROR)
+            .build();
+
+        return toResponse(detail);
+    }
+
+    // --- 공통 변환 ---
+    private ResponseEntity<ApiResponse<?>> toResponse(ErrorDetail detail) {
+        ErrorCode errorCode = detail.getErrorCode();
+
+        return ResponseEntity
+            .status(errorCode.getStatus())
+            .body(ApiResponse.builder()
+                .message(errorCode.getMessage())
+                .data(detail.getData())
+                .errors(detail.getErrors())
+                .fail());
     }
 }
