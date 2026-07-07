@@ -16,7 +16,7 @@ public class AuthService {
 
     private static final Duration COOLDOWN = Duration.ofSeconds(30);
     private static final Duration LOCK_TTL = Duration.ofSeconds(5);
-    private static final Duration CODE_TTL  = Duration.ofMinutes(5);
+    private static final Duration CODE_TTL  = Duration.ofSeconds(60);
     private static final Duration VERIFY_TTL = Duration.ofMinutes(10);
 
     private final SmsService smsService;
@@ -71,7 +71,7 @@ public class AuthService {
     public boolean verifyCode(String phone, String code) {
         String stored = redisTemplate.opsForValue().get("sms:code:" + phone);
         if (stored == null || !stored.equals(code)) {
-            return false;
+            throw new CustomException(ErrorCode.SMS_INVALID_CODE);
         }
         redisTemplate.delete("sms:code:" + phone);
         redisTemplate.opsForValue().set(

@@ -35,11 +35,12 @@ public class AuthController {
     }
 
     @PostMapping("/verify-code")
-    public ResponseEntity<String> verifyCode(@RequestBody @Valid VerifyCodeRequest request) {
-        boolean result = authService.verifyCode(request.getPhone(), request.getCode());
-        if (result) {
-            return ResponseEntity.ok("인증이 완료되었습니다.");
-        }
-        return ResponseEntity.badRequest().body("인증번호가 올바르지 않습니다.");
+    public ResponseEntity<ApiResponse<Void>> verifyCode(@RequestBody @Valid VerifyCodeRequest request) {
+        authService.verifyCode(request.getPhone(), request.getCode());
+        return ResponseEntity.ok(
+            ApiResponse.<Void>builder()
+                .message("인증이 완료되었습니다.")
+                .ok()
+        );
     }
 }
