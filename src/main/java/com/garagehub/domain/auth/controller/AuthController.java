@@ -1,6 +1,7 @@
 package com.garagehub.domain.auth.controller;
 
 import com.garagehub.domain.auth.dto.SendCodeRequest;
+import com.garagehub.domain.auth.dto.SendVerificationResponse;
 import com.garagehub.domain.auth.dto.VerifyCodeRequest;
 import com.garagehub.domain.auth.service.AuthService;
 import com.garagehub.global.common.ApiResponse;
@@ -20,12 +21,15 @@ public class AuthController {
     }
 
     @PostMapping("/send-code")
-    public ResponseEntity<ApiResponse<Void>> sendCode(@RequestBody @Valid SendCodeRequest request) {
-        authService.sendVerificationCode(request.getPhone());
+    public ResponseEntity<ApiResponse<SendVerificationResponse>> sendCode(@RequestBody @Valid SendCodeRequest request) {
+        long expiresIn = authService.sendVerificationCode(request.getPhone());
 
         return ResponseEntity.ok(
-            ApiResponse.<Void>builder()
+            ApiResponse.<SendVerificationResponse>builder()
                 .message("인증번호가 발송되었습니다.")
+                .data(SendVerificationResponse.builder()
+                    .expiresIn(expiresIn)
+                    .build())
                 .ok()
         );
     }

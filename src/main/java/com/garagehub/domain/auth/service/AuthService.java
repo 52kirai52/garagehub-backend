@@ -30,7 +30,7 @@ public class AuthService {
         this.userRepository = userRepository;
     }
 
-    public void sendVerificationCode(String phone) {
+    public long sendVerificationCode(String phone) {
         if (userRepository.existsByPhone(phone)) {
             throw new CustomException(ErrorCode.DUPLICATE_PHONE);
         }
@@ -44,8 +44,8 @@ public class AuthService {
         try {
             String cooldownKey = "sms:cooldown:" + phone;
             if (Boolean.TRUE.equals(redisTemplate.hasKey(cooldownKey))) {
-                Long ttl = redisTemplate.getExpire(cooldownKey);
-                throw new CustomException(ErrorCode.SMS_COOLDOWN, Map.of("remainingSeconds", ttl));
+                Long retryAfter = redisTemplate.getExpire(cooldownKey);
+                throw new CustomException(ErrorCode.SMS_COOLDOWN, Map.of("retryAfter", retryAfter));
             }
 
             String codeKey = "sms:code:" + phone;
@@ -56,6 +56,8 @@ public class AuthService {
 
             redisTemplate.opsForValue().set(codeKey, code, CODE_TTL);
             redisTemplate.opsForValue().set(cooldownKey, "1", COOLDOWN);
+
+            return CODE_TTL.getSeconds(); // 300
 
         } catch (CustomException e) {
             throw e;
