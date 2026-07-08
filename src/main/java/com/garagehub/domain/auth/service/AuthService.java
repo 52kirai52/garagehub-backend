@@ -14,10 +14,13 @@ import java.util.Map;
 @Service
 public class AuthService {
 
-    private static final Duration COOLDOWN = Duration.ofSeconds(30);
     private static final Duration LOCK_TTL = Duration.ofSeconds(5);
     private static final Duration CODE_TTL  = Duration.ofSeconds(60);
     private static final Duration VERIFY_TTL = Duration.ofMinutes(10);
+
+    private static final Duration COOLDOWN = Duration.ofMinutes(5);   // 30초 → 5분
+    private static final int MAX_SEND_COUNT = 5;                       // 허용 발송 횟수
+    private static final Duration COUNT_TTL = Duration.ofMinutes(30);
 
     private final SmsService smsService;
     private final StringRedisTemplate redisTemplate;
@@ -43,11 +46,19 @@ public class AuthService {
 
         try {
             String cooldownKey = "sms:cooldown:" + phone;
+            String countKey = "sms:count:" + phone;
+
             if (Boolean.TRUE.equals(redisTemplate.hasKey(cooldownKey))) {
-                Long retryAfter = redisTemplate.getExpire(cooldownKey);
-                throw new CustomException(ErrorCode.SMS_COOLDOWN, Map.of("retryAfter", retryAfter));
+                throw new CustomException(ErrorCode.SMS_COOLDOWN);
             }
 
+            // 2. 발송 횟수 증가
+            Long count = redisTemplate.opsForValue().increment(countKey);
+            if (count != null && count == 1) {
+                redisTemplate.expire(countKey, COUNT_TTL);
+            }
+
+            // 3. 정상 발송 진행
             String codeKey = "sms:code:" + phone;
             redisTemplate.delete(codeKey);
 
@@ -55,9 +66,14 @@ public class AuthService {
             smsService.sendSms(phone, "[GarageHub] 인증번호: " + code);
 
             redisTemplate.opsForValue().set(codeKey, code, CODE_TTL);
-            redisTemplate.opsForValue().set(cooldownKey, "1", COOLDOWN);
 
-            return CODE_TTL.getSeconds(); // 300
+            // 4. 5번째를 방금 썼으면 → 쿨다운 시작 + 카운터 리셋
+            if (count != null && count >= MAX_SEND_COUNT) {
+                redisTemplate.opsForValue().set(cooldownKey, "1", COOLDOWN);
+                redisTemplate.delete(countKey);
+            }
+
+            return CODE_TTL.getSeconds();
 
         } catch (CustomException e) {
             throw e;
