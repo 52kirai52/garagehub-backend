@@ -8,9 +8,10 @@ import lombok.Builder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ApiResponse<T>(
     boolean success,
+    String errorcode,
     String message,
     T data,
-    List<FieldError> errors
+    List<FieldError> fieldErrors
 ) {
     public static class ApiResponseBuilder<T> {
         public ApiResponse<T> ok() {
@@ -25,7 +26,6 @@ public record ApiResponse<T>(
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record FieldError(
         String field,
-        String code,
         String message
     ) {}
 }

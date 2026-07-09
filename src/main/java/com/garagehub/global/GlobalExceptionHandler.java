@@ -3,7 +3,6 @@ package com.garagehub.global;
 import com.garagehub.global.common.ApiResponse;
 import com.garagehub.global.exception.CustomException;
 import com.garagehub.global.exception.ErrorCode;
-import com.garagehub.global.exception.ErrorDetail;
 
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -27,23 +26,21 @@ public class GlobalExceptionHandler {
 
         log.warn("비즈니스 예외: {}", errorCode.getCode());
 
-        ErrorDetail detail = ErrorDetail.builder()
-            .errorCode(errorCode)
-            .data(e.getData())
-            .build();
-
-        return toResponse(detail);
+        return toResponse(errorCode, e.getData(), null);
     }
 
     @ExceptionHandler(RedisConnectionFailureException.class)
     public ResponseEntity<ApiResponse<?>> handleRedisConnection(RedisConnectionFailureException e) {
         log.error("Redis 연결 실패", e);
 
-        ErrorDetail detail = ErrorDetail.builder()
-            .errorCode(ErrorCode.REDIS_CONNECTION_FAILED)
-            .build();
+        return toResponse(ErrorCode.REDIS_CONNECTION_FAILED, null, null);
+    }
 
-        return toResponse(detail);
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<?>> handleDataIntegrity(DataIntegrityViolationException e) {
+        log.error("데이터 무결성 위반", e);
+
+        return toResponse(ErrorCode.DATA_INTEGRITY_VIOLATION, null, null);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -57,29 +54,11 @@ public class GlobalExceptionHandler {
             .stream()
             .map(fieldError -> new ApiResponse.FieldError(
                 fieldError.getField(),
-                errorCode.getCode(),
                 fieldError.getDefaultMessage()
             ))
             .toList();
 
-        ErrorDetail detail = ErrorDetail.builder()
-            .errorCode(errorCode)
-            .errors(errors)
-            .build();
-
-        return toResponse(detail);
-    }
-
-
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ApiResponse<?>> handleDataIntegrity(DataIntegrityViolationException e) {
-        log.error("데이터 무결성 위반", e);
-
-        ErrorDetail detail = ErrorDetail.builder()
-            .errorCode(ErrorCode.DATA_INTEGRITY_VIOLATION)
-            .build();
-
-        return toResponse(detail);
+        return toResponse(errorCode, null, errors);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -93,39 +72,30 @@ public class GlobalExceptionHandler {
             .map(violation -> {
                 String path = violation.getPropertyPath().toString();
                 String field = path.substring(path.lastIndexOf('.') + 1);
-                return new ApiResponse.FieldError(field, errorCode.getCode(), violation.getMessage());
+                return new ApiResponse.FieldError(field, violation.getMessage());
             })
             .toList();
 
-        ErrorDetail detail = ErrorDetail.builder()
-            .errorCode(errorCode)
-            .errors(errors)
-            .build();
-
-        return toResponse(detail);
+        return toResponse(errorCode, null, errors);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<?>> handleException(Exception e) {
         log.error("예상 못한 예외 발생", e);
 
-        ErrorDetail detail = ErrorDetail.builder()
-            .errorCode(ErrorCode.UNEXPECTED_ERROR)
-            .build();
-
-        return toResponse(detail);
+        return toResponse(ErrorCode.UNEXPECTED_ERROR, null, null);
     }
 
-    // --- 공통 변환 ---
-    private ResponseEntity<ApiResponse<?>> toResponse(ErrorDetail detail) {
-        ErrorCode errorCode = detail.getErrorCode();
+    private ResponseEntity<ApiResponse<?>> toResponse(
+            ErrorCode errorCode, Object data, List<ApiResponse.FieldError> fieldErrors) {
 
         return ResponseEntity
             .status(errorCode.getStatus())
             .body(ApiResponse.builder()
+                .errorcode(errorCode.getCode())
                 .message(errorCode.getMessage())
-                .data(detail.getData())
-                .errors(detail.getErrors())
+                .data(data)
+                .fieldErrors(fieldErrors)
                 .fail());
     }
 }
