@@ -17,6 +17,7 @@ public enum ErrorCode {
     SMS_INVALID_CODE(HttpStatus.BAD_REQUEST, "AUTH_005", "인증번호가 올바르지 않습니다."),
     PHONE_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "AUTH_006", "전화번호 인증이 필요합니다."),
     DUPLICATE_USERNAME(HttpStatus.BAD_REQUEST, "AUTH_007", "이미 사용중인 아이디입니다."),
+    DUPLICATE_EMAIL(HttpStatus.BAD_REQUEST, "AUTH_008", "이미 사용중인 이메일입니다."),
 
     // 공통 (COMMON)
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "COMMON_001", "올바른 입력값이 아닙니다."),
