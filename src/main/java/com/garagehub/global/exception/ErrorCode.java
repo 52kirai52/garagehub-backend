@@ -15,6 +15,8 @@ public enum ErrorCode {
     SMS_COOLDOWN(HttpStatus.BAD_REQUEST, "AUTH_003", "발송 횟수를 초과했습니다. 잠시 후 다시 시도해주세요"),
     SMS_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "AUTH_004", "인증번호 발송에 실패했습니다."),
     SMS_INVALID_CODE(HttpStatus.BAD_REQUEST, "AUTH_005", "인증번호가 올바르지 않습니다."),
+    PHONE_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "AUTH_006", "전화번호 인증이 필요합니다."),
+    DUPLICATE_USERNAME(HttpStatus.BAD_REQUEST, "AUTH_007", "이미 사용중인 아이디입니다."),
 
     // 공통 (COMMON)
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "COMMON_001", "올바른 입력값이 아닙니다."),
