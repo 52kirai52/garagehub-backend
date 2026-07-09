@@ -1,7 +1,13 @@
 package com.garagehub.domain.user.dto;
 
+import com.garagehub.domain.user.entity.Gender;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import java.time.LocalDate;
 import lombok.Getter;
 
 @Getter
@@ -26,4 +32,15 @@ public class SignUpRequest {
     @Pattern(regexp = "^01[0-9]{8,9}$", 
              message = "올바른 전화번호 형식이 아닙니다.")
     private String phone;
+
+    @NotNull(message = "생년월일을 입력해주세요.")
+    @Past(message = "생년월일은 과거 날짜여야 합니다.")
+    private LocalDate birthDate;
+
+    @NotNull(message = "성별을 입력해주세요.")
+    private Gender gender;
+
+    @Email(message = "올바른 이메일 형식이 아닙니다.")
+    @Size(max = 255, message = "이메일은 255자 이하여야 합니다.")
+    private String email;
 }
