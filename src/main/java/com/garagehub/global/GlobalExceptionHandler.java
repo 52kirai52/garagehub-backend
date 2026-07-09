@@ -5,6 +5,7 @@ import com.garagehub.global.exception.CustomException;
 import com.garagehub.global.exception.ErrorCode;
 import com.garagehub.global.exception.ErrorDetail;
 
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
@@ -76,6 +77,29 @@ public class GlobalExceptionHandler {
 
         ErrorDetail detail = ErrorDetail.builder()
             .errorCode(ErrorCode.DATA_INTEGRITY_VIOLATION)
+            .build();
+
+        return toResponse(detail);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse<?>> handleConstraintViolation(ConstraintViolationException e) {
+        ErrorCode errorCode = ErrorCode.INVALID_INPUT;
+
+        log.warn("파라미터 검증 예외: {}", errorCode.getCode());
+
+        List<ApiResponse.FieldError> errors = e.getConstraintViolations()
+            .stream()
+            .map(violation -> {
+                String path = violation.getPropertyPath().toString();
+                String field = path.substring(path.lastIndexOf('.') + 1);
+                return new ApiResponse.FieldError(field, errorCode.getCode(), violation.getMessage());
+            })
+            .toList();
+
+        ErrorDetail detail = ErrorDetail.builder()
+            .errorCode(errorCode)
+            .errors(errors)
             .build();
 
         return toResponse(detail);
