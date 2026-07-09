@@ -56,7 +56,10 @@ public class UserService {
         redisTemplate.delete("sms:verified:" + request.getPhone());
     }
 
-    public boolean checkUsername(String username) {
-        return !userRepository.existsByUsername(username);
+    public void validateUsername(String username) {
+            if (userRepository.existsByUsername(username)) {
+                throw new CustomException(ErrorCode.DUPLICATE_USERNAME);
+            }
     }
+    
 }
