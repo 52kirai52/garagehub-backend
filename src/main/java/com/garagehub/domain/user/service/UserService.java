@@ -3,6 +3,9 @@ package com.garagehub.domain.user.service;
 import com.garagehub.domain.user.dto.SignUpRequest;
 import com.garagehub.domain.user.entity.User;
 import com.garagehub.domain.user.repository.UserRepository;
+import com.garagehub.global.exception.CustomException;
+import com.garagehub.global.exception.ErrorCode;
+
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,15 +30,15 @@ public class UserService {
     public void signUp(SignUpRequest request) {
         String verified = redisTemplate.opsForValue().get("sms:verified:" + request.getPhone());
         if (!"true".equals(verified)) {
-            throw new RuntimeException("전화번호 인증이 필요합니다.");
+            throw new CustomException(ErrorCode.PHONE_NOT_VERIFIED);
         }
 
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("이미 사용중인 아이디입니다.");
+            throw new CustomException(ErrorCode.DUPLICATE_USERNAME);
         }
 
         if (userRepository.existsByPhone(request.getPhone())) {
-            throw new RuntimeException("이미 가입된 전화번호입니다.");
+            throw new CustomException(ErrorCode.DUPLICATE_PHONE);
         }
 
         User user = User.builder()
