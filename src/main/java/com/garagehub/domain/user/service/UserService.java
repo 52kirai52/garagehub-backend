@@ -44,6 +44,9 @@ public class UserService {
                 .name(request.getName())
                 .phone(request.getPhone())
                 .phoneVerified(true)
+                .birthDate(request.getBirthDate())
+                .gender(request.getGender())
+                .email(request.getEmail())
                 .build();
 
         userRepository.save(user);
