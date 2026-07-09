@@ -2,6 +2,7 @@ package com.garagehub.domain.user.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -30,6 +31,16 @@ public class User {
 
     @Column(nullable = false)
     private boolean phoneVerified = false;
+
+    @Column(nullable = false)
+    private LocalDate birthDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private Gender gender;
+
+    @Column(unique = true)
+    private String email;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
