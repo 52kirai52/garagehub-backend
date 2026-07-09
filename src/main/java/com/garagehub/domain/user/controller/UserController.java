@@ -2,6 +2,8 @@ package com.garagehub.domain.user.controller;
 
 import com.garagehub.domain.user.dto.SignUpRequest;
 import com.garagehub.domain.user.service.UserService;
+import com.garagehub.global.common.ApiResponse;
+
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,9 +19,13 @@ public class UserController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<String> signUp(@RequestBody @Valid SignUpRequest request) {
+    public ResponseEntity<ApiResponse<Void>> signUp(@RequestBody @Valid SignUpRequest request) {
         userService.signUp(request);
-        return ResponseEntity.ok("회원가입이 완료되었습니다.");
+        return ResponseEntity.ok(
+            ApiResponse.<Void>builder()
+                .message("회원가입이 완료되었습니다.")
+                .ok()
+        );
     }
 
     @GetMapping("/check-username")
