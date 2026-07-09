@@ -41,6 +41,10 @@ public class UserService {
             throw new CustomException(ErrorCode.DUPLICATE_PHONE);
         }
 
+        if (request.getEmail() != null && userRepository.existsByEmail(request.getEmail())) {
+            throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
+        }
+
         User user = User.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
