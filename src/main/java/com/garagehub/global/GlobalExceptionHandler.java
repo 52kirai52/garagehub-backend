@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -44,7 +45,7 @@ public class GlobalExceptionHandler {
         return toResponse(detail);
     }
 
-@ExceptionHandler(MethodArgumentNotValidException.class)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<?>> handleValidation(MethodArgumentNotValidException e) {
         ErrorCode errorCode = ErrorCode.INVALID_INPUT;
 
@@ -63,6 +64,18 @@ public class GlobalExceptionHandler {
         ErrorDetail detail = ErrorDetail.builder()
             .errorCode(errorCode)
             .errors(errors)
+            .build();
+
+        return toResponse(detail);
+    }
+
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<?>> handleDataIntegrity(DataIntegrityViolationException e) {
+        log.error("데이터 무결성 위반", e);
+
+        ErrorDetail detail = ErrorDetail.builder()
+            .errorCode(ErrorCode.DATA_INTEGRITY_VIOLATION)
             .build();
 
         return toResponse(detail);
