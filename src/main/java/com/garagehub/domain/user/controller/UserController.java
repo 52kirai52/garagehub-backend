@@ -5,6 +5,7 @@ import com.garagehub.domain.user.service.UserService;
 import com.garagehub.global.common.ApiResponse;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
@@ -45,6 +46,19 @@ public class UserController {
         return ResponseEntity.ok(
             ApiResponse.<Void>builder()
                 .message("사용 가능한 아이디입니다.")
+                .ok()
+        );
+    }
+
+    @GetMapping("/check-email")
+    public ResponseEntity<ApiResponse<Void>> checkEmail(
+            @RequestParam @NotBlank @Email(message = "이메일 형식이 올바르지 않습니다.") String email) {
+
+        userService.validateEmail(email);
+
+        return ResponseEntity.ok(
+            ApiResponse.<Void>builder()
+                .message("사용 가능한 이메일입니다.")
                 .ok()
         );
     }

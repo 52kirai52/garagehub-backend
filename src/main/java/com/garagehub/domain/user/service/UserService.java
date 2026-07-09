@@ -57,9 +57,14 @@ public class UserService {
     }
 
     public void validateUsername(String username) {
-            if (userRepository.existsByUsername(username)) {
-                throw new CustomException(ErrorCode.DUPLICATE_USERNAME);
-            }
+        if (userRepository.existsByUsername(username)) {
+            throw new CustomException(ErrorCode.DUPLICATE_USERNAME);
+        }
     }
-    
+
+    public void validateEmail(String email) {
+        if (userRepository.existsByEmail(email)) {
+            throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
+        }
+    }
 }
